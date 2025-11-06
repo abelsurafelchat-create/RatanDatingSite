@@ -4,30 +4,51 @@ import pool from '../database/db.js';
 
 export const register = async (req, res) => {
   try {
+    // Accept both camelCase and snake_case field names
     const {
       email,
       password,
       fullName,
+      full_name,
       gender,
       dateOfBirth,
+      date_of_birth,
       registrationType,
+      registration_type,
       caste,
       phone,
+      phone_number,
       location,
       profilePhoto,
+      profile_photo,
     } = req.body;
+
+    // Use snake_case if provided, otherwise use camelCase
+    const finalFullName = full_name || fullName;
+    const finalDateOfBirth = date_of_birth || dateOfBirth;
+    const finalRegistrationType = registration_type || registrationType;
+    const finalPhone = phone_number || phone;
+    const finalProfilePhoto = profile_photo || profilePhoto;
 
     console.log('Registration request received');
     console.log('Email:', email);
-    console.log('Full Name:', fullName);
-    console.log('Profile Photo received:', profilePhoto ? 'Yes' : 'No');
-    if (profilePhoto) {
-      console.log('Profile Photo length:', profilePhoto.length);
-      console.log('Profile Photo preview:', profilePhoto.substring(0, 50) + '...');
+    console.log('Full Name:', finalFullName);
+    console.log('Profile Photo received:', finalProfilePhoto ? 'Yes' : 'No');
+    if (finalProfilePhoto) {
+      console.log('Profile Photo length:', finalProfilePhoto.length);
+      console.log('Profile Photo preview:', finalProfilePhoto.substring(0, 50) + '...');
     }
 
     // Validate required fields
-    if (!email || !password || !fullName || !gender || !dateOfBirth || !registrationType) {
+    if (!email || !password || !finalFullName || !gender || !finalDateOfBirth || !finalRegistrationType) {
+      console.log('Missing required fields:', {
+        email: !!email,
+        password: !!password,
+        fullName: !!finalFullName,
+        gender: !!gender,
+        dateOfBirth: !!finalDateOfBirth,
+        registrationType: !!finalRegistrationType
+      });
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -51,7 +72,7 @@ export const register = async (req, res) => {
        registration_type, caste, phone, location, profile_photo) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
        RETURNING id, email, full_name, gender, registration_type, caste, profile_photo`,
-      [email, passwordHash, fullName, gender, dateOfBirth, registrationType, caste, phone, location, profilePhoto || null]
+      [email, passwordHash, finalFullName, gender, finalDateOfBirth, finalRegistrationType, caste, finalPhone, location, finalProfilePhoto || null]
     );
 
     let user = result.rows[0];
@@ -60,7 +81,7 @@ export const register = async (req, res) => {
     console.log('User profile_photo in INSERT result:', user.profile_photo ? 'Yes' : 'No');
     
     // Fetch user again to ensure we get the full profile_photo
-    if (profilePhoto) {
+    if (finalProfilePhoto) {
       const userFetch = await pool.query(
         'SELECT id, email, full_name, gender, registration_type, caste, profile_photo FROM users WHERE id = $1',
         [user.id]
@@ -73,12 +94,12 @@ export const register = async (req, res) => {
     }
 
     // If profile photo was uploaded, also add it to profile_photos table
-    if (profilePhoto) {
+    if (finalProfilePhoto) {
       console.log('Adding photo to profile_photos table...');
       await pool.query(
         `INSERT INTO profile_photos (user_id, photo_url, is_primary) 
          VALUES ($1, $2, true)`,
-        [user.id, profilePhoto]
+        [user.id, finalProfilePhoto]
       );
       console.log('Photo added to profile_photos table');
     }
