@@ -115,6 +115,24 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
+        // Fix circular dependency issues
+        manualChunks: (id) => {
+          // Separate vendor chunks to prevent circular dependencies
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-vendor';
+            }
+            if (id.includes('simple-peer') || id.includes('socket.io')) {
+              return 'webrtc-vendor';
+            }
+            return 'vendor';
+          }
+        },
+        // Ensure proper module initialization order
+        inlineDynamicImports: false,
         banner: `
 (function() {
   // Critical polyfills - must run before ANY module code
@@ -173,6 +191,21 @@ export default defineConfig({
   }
 })();
         `,
+      },
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+    // Enable source maps for debugging
+    sourcemap: false,
+    // Minification options
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: true,
+      },
+      format: {
+        comments: false,
       },
     },
   },
