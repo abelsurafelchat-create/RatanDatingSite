@@ -1,11 +1,22 @@
 # Circular Dependency Error Fix
 
 ## Error Description
+
+### Initial Error
 ```
 Uncaught ReferenceError: Cannot access 'Gt' before initialization
     at index-381c5645.js:1:160
     at index-381c5645.js:1:844
 ```
+
+### Follow-up Error (after initial fix)
+```
+Uncaught ReferenceError: Cannot access 'H' before initialization
+    at webrtc-vendor-07b42d7c.js:1:924
+    at webrtc-vendor-07b42d7c.js:1:1003
+```
+
+Both errors are caused by the same root issue: **circular dependencies** in the bundled code.
 
 ## Root Cause
 
@@ -47,7 +58,14 @@ Updated `/vite.config.js` to implement **manual chunk splitting**:
 
 ```javascript
 build: {
+  commonjsOptions: {
+    transformMixedEsModules: true,
+    strictRequires: true,
+  },
   rollupOptions: {
+    treeshake: {
+      moduleSideEffects: 'no-external',
+    },
     output: {
       manualChunks: (id) => {
         if (id.includes('node_modules')) {
@@ -57,8 +75,15 @@ build: {
           if (id.includes('framer-motion')) {
             return 'framer-vendor';
           }
-          if (id.includes('simple-peer') || id.includes('socket.io')) {
-            return 'webrtc-vendor';
+          // Split WebRTC libraries separately
+          if (id.includes('simple-peer')) {
+            return 'simple-peer-vendor';
+          }
+          if (id.includes('socket.io')) {
+            return 'socket-vendor';
+          }
+          if (id.includes('react-router')) {
+            return 'router-vendor';
           }
           return 'vendor';
         }
@@ -101,7 +126,9 @@ You should see multiple `.js` files:
 - `index-[hash].js` - Your application code
 - `react-vendor-[hash].js` - React libraries
 - `framer-vendor-[hash].js` - Framer Motion
-- `webrtc-vendor-[hash].js` - WebRTC libraries
+- `simple-peer-vendor-[hash].js` - Simple Peer (WebRTC)
+- `socket-vendor-[hash].js` - Socket.io
+- `router-vendor-[hash].js` - React Router
 - `vendor-[hash].js` - Other dependencies
 
 ### 4. Test Locally

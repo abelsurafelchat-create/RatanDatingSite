@@ -112,40 +112,51 @@ export default defineConfig({
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,
-      strictRequires: true,
     },
     rollupOptions: {
-      // Prevent circular dependencies
-      treeshake: {
-        moduleSideEffects: 'no-external',
-      },
       output: {
-        // Fix circular dependency issues
+        // Fix circular dependency issues with proper chunk splitting
         manualChunks: (id) => {
           // Separate vendor chunks to prevent circular dependencies
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
+            // React core - must load first
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
               return 'react-vendor';
             }
-            if (id.includes('framer-motion')) {
-              return 'framer-vendor';
-            }
-            // Split WebRTC libraries separately to avoid circular deps
-            if (id.includes('simple-peer')) {
-              return 'simple-peer-vendor';
-            }
-            if (id.includes('socket.io')) {
-              return 'socket-vendor';
-            }
-            // Keep other common dependencies separate
+            // React Router - depends on React
             if (id.includes('react-router')) {
               return 'router-vendor';
             }
+            // Framer Motion - animation library
+            if (id.includes('framer-motion')) {
+              return 'framer-vendor';
+            }
+            // Socket.io client
+            if (id.includes('socket.io-client') || id.includes('engine.io-client')) {
+              return 'socket-vendor';
+            }
+            // Simple Peer and WebRTC dependencies
+            if (id.includes('simple-peer') || id.includes('get-browser-rtc') || id.includes('randombytes')) {
+              return 'webrtc-vendor';
+            }
+            // Axios
+            if (id.includes('axios')) {
+              return 'axios-vendor';
+            }
+            // All other dependencies
             return 'vendor';
           }
         },
         // Ensure proper module initialization order
         inlineDynamicImports: false,
+        // Preserve module structure
+        preserveModules: false,
+        // Use more compatible format
+        format: 'es',
+        // Better variable naming to avoid conflicts
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
         banner: `
 (function() {
   // Critical polyfills - must run before ANY module code
