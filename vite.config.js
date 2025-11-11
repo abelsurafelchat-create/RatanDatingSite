@@ -9,36 +9,61 @@ const polyfillPlugin = () => ({
       '<head>',
       `<head>
     <script>
-      // Polyfill global and its properties BEFORE any module loads
+      // CRITICAL: Polyfill global and its properties BEFORE any module loads
       (function() {
+        // Initialize globalThis
         if (typeof globalThis === 'undefined') {
           window.globalThis = window;
         }
-        globalThis.global = globalThis;
-        window.global = globalThis;
         
-        // Ensure Request and Response exist on global
-        if (!globalThis.Request) {
-          globalThis.Request = window.Request || class Request {
+        // Set up global object - THIS IS CRITICAL
+        window.global = window.global || window;
+        globalThis.global = globalThis.global || globalThis;
+        
+        // Polyfill Request and Response for simple-peer
+        if (typeof Request === 'undefined') {
+          window.Request = class Request {
             constructor(input, init) {
               this.url = input;
-              this.method = init?.method || 'GET';
+              this.method = (init && init.method) || 'GET';
+              this.headers = (init && init.headers) || {};
             }
           };
         }
-        if (!globalThis.Response) {
-          globalThis.Response = window.Response || class Response {
+        
+        if (typeof Response === 'undefined') {
+          window.Response = class Response {
             constructor(body, init) {
               this.body = body;
-              this.status = init?.status || 200;
+              this.status = (init && init.status) || 200;
+              this.headers = (init && init.headers) || {};
             }
           };
         }
-        if (!globalThis.process) {
-          globalThis.process = { env: {}, browser: true, version: '', versions: {} };
+        
+        // Ensure they're on global object
+        global.Request = global.Request || window.Request;
+        global.Response = global.Response || window.Response;
+        globalThis.Request = globalThis.Request || window.Request;
+        globalThis.Response = globalThis.Response || window.Response;
+        
+        // Process polyfill
+        if (typeof process === 'undefined') {
+          window.process = { 
+            env: { NODE_ENV: 'production' },
+            browser: true,
+            version: '',
+            versions: {}
+          };
+          global.process = window.process;
         }
-        if (!globalThis.Buffer) {
-          globalThis.Buffer = { isBuffer: () => false };
+        
+        // Buffer polyfill
+        if (typeof Buffer === 'undefined') {
+          window.Buffer = { 
+            isBuffer: function() { return false; }
+          };
+          global.Buffer = window.Buffer;
         }
       })();
     </script>`
@@ -96,27 +121,55 @@ export default defineConfig({
   if (typeof globalThis === 'undefined') {
     window.globalThis = window;
   }
-  if (typeof globalThis.Request === 'undefined') {
-    globalThis.Request = class Request {
+  
+  // Set up global object - CRITICAL for simple-peer
+  window.global = window.global || window;
+  globalThis.global = globalThis.global || globalThis;
+  
+  // Polyfill Request and Response
+  if (typeof Request === 'undefined') {
+    window.Request = class Request {
       constructor(input, init) {
         this.url = input;
-        this.method = init?.method || 'GET';
+        this.method = (init && init.method) || 'GET';
+        this.headers = (init && init.headers) || {};
       }
     };
   }
-  if (typeof globalThis.Response === 'undefined') {
-    globalThis.Response = class Response {
+  
+  if (typeof Response === 'undefined') {
+    window.Response = class Response {
       constructor(body, init) {
         this.body = body;
-        this.status = init?.status || 200;
+        this.status = (init && init.status) || 200;
+        this.headers = (init && init.headers) || {};
       }
     };
   }
-  if (typeof globalThis.process === 'undefined') {
-    globalThis.process = { env: {}, browser: true, version: '', versions: {} };
+  
+  // Ensure they're on global object
+  global.Request = global.Request || window.Request;
+  global.Response = global.Response || window.Response;
+  globalThis.Request = globalThis.Request || window.Request;
+  globalThis.Response = globalThis.Response || window.Response;
+  
+  // Process polyfill
+  if (typeof process === 'undefined') {
+    window.process = { 
+      env: { NODE_ENV: 'production' },
+      browser: true,
+      version: '',
+      versions: {}
+    };
+    global.process = window.process;
   }
-  if (typeof globalThis.Buffer === 'undefined') {
-    globalThis.Buffer = { isBuffer: () => false };
+  
+  // Buffer polyfill
+  if (typeof Buffer === 'undefined') {
+    window.Buffer = { 
+      isBuffer: function() { return false; }
+    };
+    global.Buffer = window.Buffer;
   }
 })();
         `,
