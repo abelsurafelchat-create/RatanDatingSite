@@ -9,17 +9,19 @@
       // CRITICAL: Must run BEFORE any module loads
       // Polyfills for axios, simple-peer and Node.js globals
       (function() {
+        'use strict';
+        
         // Initialize globalThis
         if (typeof globalThis === 'undefined') {
           window.globalThis = window;
         }
         
-        // Set up global object
-        window.global = window.global || window;
-        globalThis.global = globalThis.global || globalThis;
+        // Set up global object - CRITICAL
+        if (!window.global) window.global = window;
+        if (!globalThis.global) globalThis.global = globalThis;
         
         // Process polyfill - CRITICAL for axios
-        if (typeof process === 'undefined') {
+        if (typeof window.process === 'undefined') {
           window.process = { 
             env: { NODE_ENV: 'production' },
             browser: true,
@@ -27,38 +29,69 @@
             versions: {},
             nextTick: function(fn) { setTimeout(fn, 0); }
           };
-          global.process = window.process;
-          globalThis.process = window.process;
         }
+        global.process = window.process;
+        globalThis.process = window.process;
         
         // Buffer polyfill
-        if (typeof Buffer === 'undefined') {
+        if (typeof window.Buffer === 'undefined') {
           window.Buffer = { 
             isBuffer: function() { return false; }
           };
-          global.Buffer = window.Buffer;
-          globalThis.Buffer = window.Buffer;
+        }
+        global.Buffer = window.Buffer;
+        globalThis.Buffer = window.Buffer;
+        
+        // CRITICAL: Ensure Request/Response/fetch are ALWAYS available
+        // This prevents axios "Cannot destructure property 'Request' of 'undefined'" error
+        
+        // Use native Request or create fallback
+        if (!window.Request) {
+          window.Request = class Request {
+            constructor(input, init) {
+              this.url = input;
+              this.method = (init && init.method) || 'GET';
+              this.headers = (init && init.headers) || {};
+              this.body = (init && init.body) || null;
+            }
+          };
         }
         
-        // Ensure native Request/Response are available globally
-        // This is critical for axios http adapter
-        if (typeof Request !== 'undefined') {
-          window.Request = Request;
-          global.Request = Request;
-          globalThis.Request = Request;
+        // Use native Response or create fallback
+        if (!window.Response) {
+          window.Response = class Response {
+            constructor(body, init) {
+              this.body = body;
+              this.status = (init && init.status) || 200;
+              this.statusText = (init && init.statusText) || 'OK';
+              this.headers = (init && init.headers) || {};
+              this.ok = this.status >= 200 && this.status < 300;
+            }
+            json() { return Promise.resolve(JSON.parse(this.body)); }
+            text() { return Promise.resolve(String(this.body)); }
+          };
         }
         
-        if (typeof Response !== 'undefined') {
-          window.Response = Response;
-          global.Response = Response;
-          globalThis.Response = Response;
+        // Use native fetch or create fallback
+        if (!window.fetch) {
+          window.fetch = function() {
+            return Promise.reject(new Error('Fetch API not available'));
+          };
         }
         
-        // Ensure fetch is available
-        if (typeof fetch !== 'undefined') {
-          window.fetch = fetch;
-          global.fetch = fetch;
-          globalThis.fetch = fetch;
+        // Expose on ALL global objects for maximum compatibility
+        global.Request = window.Request;
+        global.Response = window.Response;
+        global.fetch = window.fetch;
+        globalThis.Request = window.Request;
+        globalThis.Response = window.Response;
+        globalThis.fetch = window.fetch;
+        
+        // Also expose on self for web workers
+        if (typeof self !== 'undefined') {
+          self.Request = window.Request;
+          self.Response = window.Response;
+          self.fetch = window.fetch;
         }
       })();
     </script>

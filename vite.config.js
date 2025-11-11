@@ -1,6 +1,54 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Plugin to patch axios to prevent fetch adapter issues
+const axiosPatchPlugin = () => ({
+  name: 'axios-patch-plugin',
+  transform(code, id) {
+    // Patch axios adapters to prevent Request destructuring error
+    if (id.includes('node_modules/axios')) {
+      // More aggressive patching - handle all destructuring patterns
+      
+      // Pattern 1: const { Request, Response } = something;
+      code = code.replace(
+        /const\s*{\s*Request\s*,\s*Response\s*}\s*=\s*([^;]+);/g,
+        (match, source) => {
+          return `const Request = (typeof ${source} !== "undefined" && ${source}?.Request) || (typeof window !== "undefined" && window.Request) || class Request {}; const Response = (typeof ${source} !== "undefined" && ${source}?.Response) || (typeof window !== "undefined" && window.Response) || class Response {};`;
+        }
+      );
+      
+      // Pattern 2: const { Request } = something;
+      code = code.replace(
+        /const\s*{\s*Request\s*}\s*=\s*([^;]+);/g,
+        (match, source) => {
+          return `const Request = (typeof ${source} !== "undefined" && ${source}?.Request) || (typeof window !== "undefined" && window.Request) || class Request {};`;
+        }
+      );
+      
+      // Pattern 3: const { Response } = something;
+      code = code.replace(
+        /const\s*{\s*Response\s*}\s*=\s*([^;]+);/g,
+        (match, source) => {
+          return `const Response = (typeof ${source} !== "undefined" && ${source}?.Response) || (typeof window !== "undefined" && window.Response) || class Response {};`;
+        }
+      );
+
+      // Pattern 4: Direct access like someModule.Request
+      // Add safety checks for undefined modules
+      code = code.replace(
+        /([a-zA-Z_$][a-zA-Z0-9_$]*)\.Request/g,
+        '($1 && $1.Request) || (typeof window !== "undefined" && window.Request)'
+      );
+      
+      code = code.replace(
+        /([a-zA-Z_$][a-zA-Z0-9_$]*)\.Response/g,
+        '($1 && $1.Response) || (typeof window !== "undefined" && window.Response)'
+      );
+    }
+    return code;
+  }
+});
+
 // Plugin to inject polyfills at the very start of the bundle
 const polyfillPlugin = () => ({
   name: 'polyfill-plugin',
@@ -20,40 +68,14 @@ const polyfillPlugin = () => ({
         window.global = window.global || window;
         globalThis.global = globalThis.global || globalThis;
         
-        // Polyfill Request and Response for simple-peer
-        if (typeof Request === 'undefined') {
-          window.Request = class Request {
-            constructor(input, init) {
-              this.url = input;
-              this.method = (init && init.method) || 'GET';
-              this.headers = (init && init.headers) || {};
-            }
-          };
-        }
-        
-        if (typeof Response === 'undefined') {
-          window.Response = class Response {
-            constructor(body, init) {
-              this.body = body;
-              this.status = (init && init.status) || 200;
-              this.headers = (init && init.headers) || {};
-            }
-          };
-        }
-        
-        // Ensure they're on global object
-        global.Request = global.Request || window.Request;
-        global.Response = global.Response || window.Response;
-        globalThis.Request = globalThis.Request || window.Request;
-        globalThis.Response = globalThis.Response || window.Response;
-        
         // Process polyfill
         if (typeof process === 'undefined') {
           window.process = { 
             env: { NODE_ENV: 'production' },
             browser: true,
             version: '',
-            versions: {}
+            versions: {},
+            nextTick: function(fn) { setTimeout(fn, 0); }
           };
           global.process = window.process;
         }
@@ -72,7 +94,7 @@ const polyfillPlugin = () => ({
 });
 
 export default defineConfig({
-  plugins: [polyfillPlugin(), react()],
+  plugins: [polyfillPlugin(), axiosPatchPlugin(), react()],
   server: {
     port: 5173,
     proxy: {
@@ -157,18 +179,25 @@ export default defineConfig({
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
         intro: `
-// Critical polyfills - must run before ANY module code
+// CRITICAL: Polyfills must run IMMEDIATELY before ANY module code
+// This runs at the TOP of EVERY chunk file
 (function() {
+  'use strict';
+  
+  // Ensure window exists (for SSR safety)
+  if (typeof window === 'undefined') return;
+  
+  // Initialize globalThis
   if (typeof globalThis === 'undefined') {
     window.globalThis = window;
   }
 
   // Set up global object - CRITICAL for simple-peer and axios
-  window.global = window.global || window;
-  globalThis.global = globalThis.global || globalThis;
+  if (!window.global) window.global = window;
+  if (!globalThis.global) globalThis.global = globalThis;
 
   // Process polyfill - MUST be defined before axios loads
-  if (typeof process === 'undefined') {
+  if (typeof window.process === 'undefined') {
     window.process = { 
       env: { NODE_ENV: 'production' },
       browser: true,
@@ -176,53 +205,72 @@ export default defineConfig({
       versions: {},
       nextTick: function(fn) { setTimeout(fn, 0); }
     };
-    global.process = window.process;
-    globalThis.process = window.process;
   }
+  if (!global.process) global.process = window.process;
+  if (!globalThis.process) globalThis.process = window.process;
 
   // Buffer polyfill
-  if (typeof Buffer === 'undefined') {
+  if (typeof window.Buffer === 'undefined') {
     window.Buffer = { 
       isBuffer: function() { return false; }
     };
-    global.Buffer = window.Buffer;
-    globalThis.Buffer = window.Buffer;
   }
+  if (!global.Buffer) global.Buffer = window.Buffer;
+  if (!globalThis.Buffer) globalThis.Buffer = window.Buffer;
 
-  // CRITICAL FIX for axios: Create a module with Request/Response
+  // CRITICAL FIX for axios: Ensure Request/Response are ALWAYS available
   // This prevents "Cannot destructure property 'Request' of 'undefined'"
-  if (typeof window !== 'undefined') {
-    // Ensure native APIs are available
-    window.Request = window.Request || class Request {
+  
+  // Native Request API or fallback
+  if (!window.Request) {
+    window.Request = class Request {
       constructor(input, init) {
         this.url = input;
         this.method = (init && init.method) || 'GET';
         this.headers = (init && init.headers) || {};
+        this.body = (init && init.body) || null;
       }
     };
-    
-    window.Response = window.Response || class Response {
+  }
+  
+  // Native Response API or fallback
+  if (!window.Response) {
+    window.Response = class Response {
       constructor(body, init) {
         this.body = body;
         this.status = (init && init.status) || 200;
+        this.statusText = (init && init.statusText) || 'OK';
         this.headers = (init && init.headers) || {};
+        this.ok = this.status >= 200 && this.status < 300;
       }
+      json() { return Promise.resolve(JSON.parse(this.body)); }
+      text() { return Promise.resolve(String(this.body)); }
     };
-    
-    window.fetch = window.fetch || function() {
-      return Promise.reject(new Error('Fetch not available'));
+  }
+  
+  // Native fetch or fallback
+  if (!window.fetch) {
+    window.fetch = function() {
+      return Promise.reject(new Error('Fetch API not available'));
     };
+  }
 
-    // Make them available globally for axios
-    global.Request = window.Request;
-    global.Response = window.Response;
-    global.fetch = window.fetch;
-    globalThis.Request = window.Request;
-    globalThis.Response = window.Response;
-    globalThis.fetch = window.fetch;
+  // Make them available on ALL global objects for axios
+  global.Request = window.Request;
+  global.Response = window.Response;
+  global.fetch = window.fetch;
+  globalThis.Request = window.Request;
+  globalThis.Response = window.Response;
+  globalThis.fetch = window.fetch;
+  
+  // Also expose on self for web workers compatibility
+  if (typeof self !== 'undefined') {
+    self.Request = window.Request;
+    self.Response = window.Response;
+    self.fetch = window.fetch;
   }
 })();
-        `,
+`,
       },
     },
     // Increase chunk size warning limit
