@@ -88,9 +88,8 @@ export default defineConfig({
   },
   define: {
     'global': 'globalThis',
-    'global.Request': 'globalThis.Request',
-    'global.Response': 'globalThis.Response',
-    'process.env': {},
+    'process.env': '{}',
+    'process.env.NODE_ENV': '"production"',
   },
   resolve: {
     alias: {
@@ -158,62 +157,35 @@ export default defineConfig({
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
         banner: `
-(function() {
-  // Critical polyfills - must run before ANY module code
-  if (typeof globalThis === 'undefined') {
-    window.globalThis = window;
-  }
-  
-  // Set up global object - CRITICAL for simple-peer
-  window.global = window.global || window;
-  globalThis.global = globalThis.global || globalThis;
-  
-  // Polyfill Request and Response
-  if (typeof Request === 'undefined') {
-    window.Request = class Request {
-      constructor(input, init) {
-        this.url = input;
-        this.method = (init && init.method) || 'GET';
-        this.headers = (init && init.headers) || {};
-      }
-    };
-  }
-  
-  if (typeof Response === 'undefined') {
-    window.Response = class Response {
-      constructor(body, init) {
-        this.body = body;
-        this.status = (init && init.status) || 200;
-        this.headers = (init && init.headers) || {};
-      }
-    };
-  }
-  
-  // Ensure they're on global object
-  global.Request = global.Request || window.Request;
-  global.Response = global.Response || window.Response;
-  globalThis.Request = globalThis.Request || window.Request;
-  globalThis.Response = globalThis.Response || window.Response;
-  
-  // Process polyfill
-  if (typeof process === 'undefined') {
-    window.process = { 
-      env: { NODE_ENV: 'production' },
-      browser: true,
-      version: '',
-      versions: {}
-    };
-    global.process = window.process;
-  }
-  
-  // Buffer polyfill
-  if (typeof Buffer === 'undefined') {
-    window.Buffer = { 
-      isBuffer: function() { return false; }
-    };
-    global.Buffer = window.Buffer;
-  }
-})();
+// Critical polyfills - must run before ANY module code
+if (typeof globalThis === 'undefined') {
+  window.globalThis = window;
+}
+
+// Set up global object - CRITICAL for simple-peer and axios
+window.global = window.global || window;
+globalThis.global = globalThis.global || globalThis;
+
+// Process polyfill - MUST be defined before axios loads
+if (typeof process === 'undefined') {
+  window.process = { 
+    env: { NODE_ENV: 'production' },
+    browser: true,
+    version: '',
+    versions: {}
+  };
+  global.process = window.process;
+  globalThis.process = window.process;
+}
+
+// Buffer polyfill
+if (typeof Buffer === 'undefined') {
+  window.Buffer = { 
+    isBuffer: function() { return false; }
+  };
+  global.Buffer = window.Buffer;
+  globalThis.Buffer = window.Buffer;
+}
         `,
       },
     },
