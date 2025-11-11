@@ -88,7 +88,6 @@ export default defineConfig({
   },
   define: {
     'global': 'globalThis',
-    'process.env': '{}',
     'process.env.NODE_ENV': '"production"',
   },
   resolve: {
@@ -106,7 +105,8 @@ export default defineConfig({
         global: 'globalThis',
       },
     },
-    include: ['buffer', 'process'],
+    include: ['buffer', 'process', 'axios'],
+    exclude: [],
   },
   build: {
     commonjsOptions: {
@@ -156,36 +156,72 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
-        banner: `
+        intro: `
 // Critical polyfills - must run before ANY module code
-if (typeof globalThis === 'undefined') {
-  window.globalThis = window;
-}
+(function() {
+  if (typeof globalThis === 'undefined') {
+    window.globalThis = window;
+  }
 
-// Set up global object - CRITICAL for simple-peer and axios
-window.global = window.global || window;
-globalThis.global = globalThis.global || globalThis;
+  // Set up global object - CRITICAL for simple-peer and axios
+  window.global = window.global || window;
+  globalThis.global = globalThis.global || globalThis;
 
-// Process polyfill - MUST be defined before axios loads
-if (typeof process === 'undefined') {
-  window.process = { 
-    env: { NODE_ENV: 'production' },
-    browser: true,
-    version: '',
-    versions: {}
-  };
-  global.process = window.process;
-  globalThis.process = window.process;
-}
+  // Process polyfill - MUST be defined before axios loads
+  if (typeof process === 'undefined') {
+    window.process = { 
+      env: { NODE_ENV: 'production' },
+      browser: true,
+      version: '',
+      versions: {},
+      nextTick: function(fn) { setTimeout(fn, 0); }
+    };
+    global.process = window.process;
+    globalThis.process = window.process;
+  }
 
-// Buffer polyfill
-if (typeof Buffer === 'undefined') {
-  window.Buffer = { 
-    isBuffer: function() { return false; }
-  };
-  global.Buffer = window.Buffer;
-  globalThis.Buffer = window.Buffer;
-}
+  // Buffer polyfill
+  if (typeof Buffer === 'undefined') {
+    window.Buffer = { 
+      isBuffer: function() { return false; }
+    };
+    global.Buffer = window.Buffer;
+    globalThis.Buffer = window.Buffer;
+  }
+
+  // CRITICAL FIX for axios: Create a module with Request/Response
+  // This prevents "Cannot destructure property 'Request' of 'undefined'"
+  if (typeof window !== 'undefined') {
+    // Ensure native APIs are available
+    window.Request = window.Request || class Request {
+      constructor(input, init) {
+        this.url = input;
+        this.method = (init && init.method) || 'GET';
+        this.headers = (init && init.headers) || {};
+      }
+    };
+    
+    window.Response = window.Response || class Response {
+      constructor(body, init) {
+        this.body = body;
+        this.status = (init && init.status) || 200;
+        this.headers = (init && init.headers) || {};
+      }
+    };
+    
+    window.fetch = window.fetch || function() {
+      return Promise.reject(new Error('Fetch not available'));
+    };
+
+    // Make them available globally for axios
+    global.Request = window.Request;
+    global.Response = window.Response;
+    global.fetch = window.fetch;
+    globalThis.Request = window.Request;
+    globalThis.Response = window.Response;
+    globalThis.fetch = window.fetch;
+  }
+})();
         `,
       },
     },
