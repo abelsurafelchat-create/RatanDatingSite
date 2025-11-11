@@ -5,6 +5,66 @@
     <link rel="icon" type="image/svg+xml" href="/heart.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IndiDate - Find Your Perfect Match</title>
+    <script>
+      // CRITICAL: Must run BEFORE any module loads
+      // Polyfills for simple-peer and Node.js globals
+      (function() {
+        // Initialize globalThis
+        if (typeof globalThis === 'undefined') {
+          window.globalThis = window;
+        }
+        
+        // Set up global object
+        window.global = window.global || window;
+        globalThis.global = globalThis.global || globalThis;
+        
+        // Polyfill Request and Response for simple-peer
+        if (typeof Request === 'undefined') {
+          window.Request = class Request {
+            constructor(input, init) {
+              this.url = input;
+              this.method = (init && init.method) || 'GET';
+              this.headers = (init && init.headers) || {};
+            }
+          };
+        }
+        
+        if (typeof Response === 'undefined') {
+          window.Response = class Response {
+            constructor(body, init) {
+              this.body = body;
+              this.status = (init && init.status) || 200;
+              this.headers = (init && init.headers) || {};
+            }
+          };
+        }
+        
+        // Ensure they're on global object
+        global.Request = global.Request || window.Request;
+        global.Response = global.Response || window.Response;
+        globalThis.Request = globalThis.Request || window.Request;
+        globalThis.Response = globalThis.Response || window.Response;
+        
+        // Process polyfill
+        if (typeof process === 'undefined') {
+          window.process = { 
+            env: { NODE_ENV: 'production' },
+            browser: true,
+            version: '',
+            versions: {}
+          };
+          global.process = window.process;
+        }
+        
+        // Buffer polyfill
+        if (typeof Buffer === 'undefined') {
+          window.Buffer = { 
+            isBuffer: function() { return false; }
+          };
+          global.Buffer = window.Buffer;
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
