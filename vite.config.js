@@ -112,8 +112,13 @@ export default defineConfig({
   build: {
     commonjsOptions: {
       transformMixedEsModules: true,
+      strictRequires: true,
     },
     rollupOptions: {
+      // Prevent circular dependencies
+      treeshake: {
+        moduleSideEffects: 'no-external',
+      },
       output: {
         // Fix circular dependency issues
         manualChunks: (id) => {
@@ -125,8 +130,16 @@ export default defineConfig({
             if (id.includes('framer-motion')) {
               return 'framer-vendor';
             }
-            if (id.includes('simple-peer') || id.includes('socket.io')) {
-              return 'webrtc-vendor';
+            // Split WebRTC libraries separately to avoid circular deps
+            if (id.includes('simple-peer')) {
+              return 'simple-peer-vendor';
+            }
+            if (id.includes('socket.io')) {
+              return 'socket-vendor';
+            }
+            // Keep other common dependencies separate
+            if (id.includes('react-router')) {
+              return 'router-vendor';
             }
             return 'vendor';
           }
