@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api.js';
 import { motion } from 'framer-motion';
 import { Edit2, Save, X, Plus, Trash2, Camera, User as UserIcon, MapPin, Calendar, Phone, Mail, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -41,10 +41,10 @@ const ProfileNew = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get('/api/profile');
-      setProfile(response.data);
-      setFormData(response.data);
-      setPhotos(response.data.photos || []);
+      const data = await api.get('/profile');
+      setProfile(data);
+      setFormData(data);
+      setPhotos(data.photos || []);
     } catch (error) {
       console.error('Failed to fetch profile:', error);
     } finally {
@@ -66,12 +66,12 @@ const ProfileNew = () => {
       console.log('Photos count:', photos.length);
       console.log('Profile photo exists:', !!formData.profile_photo);
       
-      const response = await axios.put('/api/profile', {
+      const data = await api.put('/profile', {
         ...formData,
         photos: photos,
       });
       
-      console.log('Save response:', response.data);
+      console.log('Save response:', data);
       
       setProfile({ ...formData, photos });
       setIsEditing(false);

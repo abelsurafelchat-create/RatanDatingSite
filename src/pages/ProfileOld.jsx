@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api.js';
 import { Edit2, Save, User as UserIcon, MapPin, Calendar, Phone, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Header from '../components/Header.jsx';
@@ -42,18 +42,18 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get('/api/profile');
-      setProfile(response.data);
+      const data = await api.get('/profile');
+      setProfile(data);
       setFormData({
-        fullName: response.data.full_name || '',
-        dateOfBirth: response.data.date_of_birth?.split('T')[0] || '',
-        caste: response.data.caste || '',
-        phone: response.data.phone || '',
-        location: response.data.location || '',
-        bio: response.data.bio || '',
-        preferredGender: response.data.preferred_gender || '',
-        minAge: response.data.min_age || 18,
-        maxAge: response.data.max_age || 50,
+        fullName: data.full_name || '',
+        dateOfBirth: data.date_of_birth?.split('T')[0] || '',
+        caste: data.caste || '',
+        phone: data.phone || '',
+        location: data.location || '',
+        bio: data.bio || '',
+        preferredGender: data.preferred_gender || '',
+        minAge: data.min_age || 18,
+        maxAge: data.max_age || 50,
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -72,7 +72,7 @@ const Profile = () => {
     setLoading(true);
 
     try {
-      await axios.put('/api/profile', formData);
+      await api.put('/profile', formData);
       updateUser({ full_name: formData.fullName });
       setEditing(false);
       fetchProfile();

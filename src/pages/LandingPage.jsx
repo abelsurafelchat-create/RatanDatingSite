@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Users, MessageCircle, Video, Shield, Sparkles, X, Eye, EyeOff, ChevronDown, Camera } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../utils/api.js';
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);

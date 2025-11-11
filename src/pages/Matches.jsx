@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api.js';
 import { MessageCircle, MapPin, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import Header from '../components/Header.jsx';
@@ -21,15 +21,15 @@ const Matches = () => {
 
   const fetchMatches = async () => {
     try {
-      const response = await axios.get('/api/matches/list');
-      console.log('Matches data:', response.data);
-      response.data.forEach(match => {
+      const data = await api.get('/matches/list');
+      console.log('Matches data:', data);
+      data.forEach(match => {
         console.log(`Match ${match.full_name}:`, {
           photos: match.photos,
           profile_photo: match.profile_photo
         });
       });
-      setMatches(response.data);
+      setMatches(data);
     } catch (error) {
       console.error('Failed to fetch matches:', error);
     } finally {

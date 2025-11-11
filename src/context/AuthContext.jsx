@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api.js';
 
 const AuthContext = createContext(null);
 
@@ -18,7 +18,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUserProfile();
     } else {
       setLoading(false);
@@ -27,8 +26,8 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get('/api/profile');
-      setUser(response.data);
+      const data = await api.get('/profile');
+      setUser(data);
     } catch (error) {
       console.error('Failed to fetch profile:', error);
       logout();
@@ -39,19 +38,18 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
-      const { token, user } = response.data;
+      const data = await api.post('/auth/login', { email, password });
+      const { token, user } = data;
       
       localStorage.setItem('token', token);
       setToken(token);
       setUser(user);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       return { success: true };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Login failed',
+        error: error.message || 'Login failed',
       };
     }
   };
@@ -61,8 +59,8 @@ export const AuthProvider = ({ children }) => {
       console.log('AuthContext: Sending registration data');
       console.log('AuthContext: Profile photo included:', userData.profilePhoto ? 'Yes' : 'No');
       
-      const response = await axios.post('/api/auth/register', userData);
-      const { token, user } = response.data;
+      const data = await api.post('/auth/register', userData);
+      const { token, user } = data;
       
       console.log('AuthContext: Registration response received');
       console.log('AuthContext: User profile_photo in response:', user.profile_photo ? 'Yes' : 'No');
@@ -70,14 +68,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       setToken(token);
       setUser(user);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       return { success: true };
     } catch (error) {
       console.error('AuthContext: Registration error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Registration failed',
+        error: error.message || 'Registration failed',
       };
     }
   };
@@ -86,7 +83,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   const updateUser = (updatedData) => {

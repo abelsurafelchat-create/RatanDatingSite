@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api.js';
 import { Heart, X, MapPin, Briefcase, Video, MessageCircle, User as UserIcon, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,8 +20,8 @@ const Home = () => {
   const fetchRecommendations = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/matches/recommendations');
-      setRecommendations(response.data);
+      const data = await api.get('/matches/recommendations');
+      setRecommendations(data);
       setCurrentIndex(0);
     } catch (error) {
       console.error('Failed to fetch recommendations:', error);
@@ -37,12 +37,12 @@ const Home = () => {
     const currentUser = recommendations[currentIndex];
 
     try {
-      const response = await axios.post('/api/matches/swipe', {
+      const data = await api.post('/matches/swipe', {
         swipedUserId: currentUser.id,
         swipeType,
       });
 
-      if (response.data.isMatch) {
+      if (data.isMatch) {
         alert(`🎉 It's a match with ${currentUser.full_name}!`);
       }
 

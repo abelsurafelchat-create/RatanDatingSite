@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useSocket } from './SocketContext.jsx';
 import { useAuth } from './AuthContext.jsx';
-import axios from 'axios';
+import api from '../utils/api.js';
 
 const NotificationContext = createContext();
 
@@ -61,8 +61,8 @@ export const NotificationProvider = ({ children }) => {
   const fetchUnreadCounts = async () => {
     try {
       const [messagesRes, matchesRes] = await Promise.all([
-        axios.get('/api/chat/unread-count'),
-        axios.get('/api/matches/new-count'),
+        api.get('/chat/unread-count'),
+        api.get('/matches/new-count'),
       ]);
       setUnreadMessages(messagesRes.data.count || 0);
       setNewMatches(matchesRes.data.count || 0);

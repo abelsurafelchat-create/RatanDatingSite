@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api.js';
 import { Send, Search, MoreVertical, User as UserIcon, ArrowLeft, Mic, Image as ImageIcon, X, StopCircle, Play, Pause } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
@@ -163,8 +163,8 @@ const Chat = () => {
 
   const fetchConversations = async () => {
     try {
-      const response = await axios.get('/api/chat/conversations');
-      setConversations(response.data);
+      const data = await api.get('/chat/conversations');
+      setConversations(data);
     } catch (error) {
       console.error('Failed to fetch conversations:', error);
     } finally {
@@ -176,17 +176,17 @@ const Chat = () => {
     try {
       console.log('Fetching user and messages for:', otherUserId);
       
-      const [userResponse, messagesResponse] = await Promise.all([
-        axios.get(`/api/profile/${otherUserId}`),
-        axios.get(`/api/chat/messages/${otherUserId}`),
+      const [userData, messagesData] = await Promise.all([
+        api.get(`/profile/${otherUserId}`),
+        api.get(`/chat/messages/${otherUserId}`),
       ]);
 
-      console.log('User data:', userResponse.data);
-      console.log('Messages received:', messagesResponse.data);
-      console.log('Number of messages:', messagesResponse.data.length);
+      console.log('User data:', userData);
+      console.log('Messages received:', messagesData);
+      console.log('Number of messages:', messagesData.length);
 
-      setSelectedUser(userResponse.data);
-      setMessages(messagesResponse.data);
+      setSelectedUser(userData);
+      setMessages(messagesData);
       
       console.log('Messages state updated');
       
@@ -214,16 +214,16 @@ const Chat = () => {
       console.log('Sending message to:', userId);
       console.log('Message:', messageText.trim());
       
-      const response = await axios.post('/api/chat/send', {
+      const data = await api.post('/chat/send', {
         receiverId: parseInt(userId),
         messageText: messageText.trim(),
       });
 
-      console.log('Message sent, response:', response.data);
+      console.log('Message sent, response:', data);
 
       // Add message to local state
       const newMessage = {
-        ...response.data,
+        ...data,
         sender_id: user.id,
         sender_name: user.full_name,
         sender_photo: user.profile_photo,
@@ -297,7 +297,7 @@ const Chat = () => {
 
   const sendVoiceMessage = async (audioData) => {
     try {
-      const response = await axios.post('/api/chat/send', {
+      const data = await api.post('/chat/send', {
         receiverId: parseInt(userId),
         messageText: '[Voice Message]',
         messageType: 'voice',
@@ -305,7 +305,7 @@ const Chat = () => {
       });
 
       const newMessage = {
-        ...response.data,
+        ...data,
         sender_id: user.id,
         sender_name: user.full_name,
         sender_photo: user.profile_photo,
@@ -356,7 +356,7 @@ const Chat = () => {
     if (!selectedImage) return;
 
     try {
-      const response = await axios.post('/api/chat/send', {
+      const data = await api.post('/chat/send', {
         receiverId: parseInt(userId),
         messageText: '[Photo]',
         messageType: 'image',
@@ -364,7 +364,7 @@ const Chat = () => {
       });
 
       const newMessage = {
-        ...response.data,
+        ...data,
         sender_id: user.id,
         sender_name: user.full_name,
         sender_photo: user.profile_photo,

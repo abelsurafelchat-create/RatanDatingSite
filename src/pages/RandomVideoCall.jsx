@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api.js';
 import { Video, VideoOff, Mic, MicOff, PhoneOff, SkipForward, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSocket } from '../context/SocketContext.jsx';
@@ -31,8 +31,8 @@ const RandomVideoCall = () => {
   useEffect(() => {
     const fetchOnlineUsers = async () => {
       try {
-        const response = await axios.get('/api/video/online-users');
-        setOnlineCount(response.data.length);
+        const data = await api.get('/video/online-users');
+        setOnlineCount(data.length);
       } catch (error) {
         console.error('Failed to fetch online users:', error);
       }
@@ -273,8 +273,8 @@ const RandomVideoCall = () => {
 
     try {
       // Get online users
-      const response = await axios.get('/api/video/online-users');
-      let availableUsers = response.data;
+      const data = await api.get('/video/online-users');
+      let availableUsers = data;
       
       console.log('📊 Available users:', availableUsers.length);
       console.log('🔄 Last partner ID:', lastPartnerId);

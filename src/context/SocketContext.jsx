@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
-import axios from 'axios';
+import api from '../utils/api.js';
 import { useAuth } from './AuthContext.jsx';
 
 const SocketContext = createContext(null);
@@ -42,7 +42,7 @@ export const SocketProvider = ({ children }) => {
       // Update last_seen every 30 seconds
       const updateLastSeen = async () => {
         try {
-          await axios.post('/api/video/update-last-seen');
+          await api.post('/video/update-last-seen');
         } catch (error) {
           console.error('Failed to update last seen:', error);
         }
