@@ -72,16 +72,33 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Health check
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
     // Test database connection
     await pool.query('SELECT 1');
-    res.json({ status: 'ok', message: 'Server is running', database: 'connected' });
+    res.json({ 
+      status: 'ok', 
+      message: 'Server is running',
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+      activeSocketUsers: Array.from(activeUsers.keys()),
+      totalActiveUsers: activeUsers.size
+    });
   } catch (error) {
     console.error('Health check failed:', error);
     res.status(503).json({ status: 'error', message: 'Database connection failed', error: error.message });
   }
+});
+
+// Socket status endpoint
+app.get('/api/socket-status', (req, res) => {
+  res.json({
+    activeUsers: Array.from(activeUsers.keys()),
+    totalConnections: activeUsers.size,
+    waitingForCall: Array.from(waitingForCall.keys()),
+    serverTime: new Date().toISOString()
+  });
 });
 
 // Global error handler
@@ -97,6 +114,8 @@ app.use((err, req, res, next) => {
 // Socket.io for real-time features
 const activeUsers = new Map(); // userId -> socketId
 const waitingForCall = new Map(); // userId -> { socketId, gender, registrationType }
+
+console.log('🚀 Socket.io server initialized and waiting for connections...');
 
 io.on('connection', (socket) => {
   console.log('🔌 New socket connection established:', socket.id);

@@ -21,11 +21,16 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user && token) {
-      console.log('🔌 Connecting to socket server:', SOCKET_URL);
+      console.log('🔌 Attempting socket connection...');
+      console.log('🌐 Socket URL:', SOCKET_URL);
+      console.log('👤 User ID:', user.id);
+      console.log('🔑 Token present:', !!token);
+      
       const newSocket = io(SOCKET_URL, {
         transports: ['websocket', 'polling'],
         timeout: 20000,
         forceNew: true,
+        autoConnect: true,
       });
 
       newSocket.on('connect', () => {

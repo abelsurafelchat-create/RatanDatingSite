@@ -19,6 +19,9 @@ export const SOCKET_URL = getBaseURL();
 
 export const IS_PRODUCTION = import.meta.env.PROD;
 
+console.log('🔧 Configuration loaded:');
 console.log('Environment:', IS_PRODUCTION ? 'Production' : 'Development');
+console.log('Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'SSR');
+console.log('Current protocol:', typeof window !== 'undefined' ? window.location.protocol : 'SSR');
 console.log('API URL:', API_URL);
 console.log('Socket URL:', SOCKET_URL);
