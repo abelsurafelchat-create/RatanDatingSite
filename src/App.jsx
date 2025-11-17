@@ -15,6 +15,7 @@ import Matches from './pages/Matches.jsx';
 import Chat from './pages/Chat.jsx';
 import RandomCall from './pages/RandomCall.jsx';
 import RandomVideoCall from './pages/RandomVideoCall.jsx';
+import Admin from './pages/Admin.jsx';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
               <Route path="/chat/:userId" element={<PrivateRoute><Chat /></PrivateRoute>} />
               <Route path="/random-call" element={<PrivateRoute><RandomCall /></PrivateRoute>} />
               <Route path="/video-call" element={<PrivateRoute><RandomVideoCall /></PrivateRoute>} />
+              <Route path="/admin" element={<PrivateRoute><Admin /></PrivateRoute>} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </NotificationProvider>

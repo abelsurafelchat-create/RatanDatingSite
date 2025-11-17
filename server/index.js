@@ -16,7 +16,8 @@ import profileRoutes from './routes/profile.js';
 import matchRoutes from './routes/matches.js';
 import chatRoutes from './routes/chat.js';
 import callRoutes from './routes/call.js';
-import videoRoutes from './routes/videoRoutes.js';
+import videoRoutes from './routes/video.js';
+import adminRoutes from './routes/admin.js';
 import { setActiveUsers } from './controllers/videoController.js';
 
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/call', callRoutes);
 app.use('/api/video', videoRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Serve static files from React build in production
 if (process.env.NODE_ENV === 'production') {

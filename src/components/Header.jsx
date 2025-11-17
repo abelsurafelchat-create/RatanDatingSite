@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Heart, MessageCircle, Video, User as UserIcon, LogOut, Home, Bell } from 'lucide-react';
+import { Heart, MessageCircle, Video, User as UserIcon, LogOut, Home, Bell, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
 
@@ -18,6 +18,7 @@ const Header = () => {
     { path: '/chat', icon: MessageCircle, label: 'Messages', badge: unreadMessages },
     { path: '/video-call', icon: Video, label: 'Video Call', badge: null },
     { path: '/profile', icon: UserIcon, label: 'Profile', badge: null },
+    ...(user?.role === 'admin' ? [{ path: '/admin', icon: Shield, label: 'Admin', badge: null }] : []),
   ];
 
   return (
