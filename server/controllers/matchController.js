@@ -184,6 +184,52 @@ export const getMatches = async (req, res) => {
   }
 };
 
+export const getLikes = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get users that the current user has liked (but not necessarily matched with)
+    const likes = await pool.query(
+      `SELECT DISTINCT 
+         s.swiped_id as liked_user_id,
+         s.created_at as liked_at,
+         u.full_name, u.gender, u.profile_photo, u.bio, u.location,
+         EXTRACT(YEAR FROM AGE(u.date_of_birth)) as age,
+         CASE WHEN m.id IS NOT NULL THEN true ELSE false END as is_mutual_match
+       FROM swipes s
+       JOIN users u ON s.swiped_id = u.id
+       LEFT JOIN matches m ON (
+         (m.user1_id = $1 AND m.user2_id = s.swiped_id) OR
+         (m.user2_id = $1 AND m.user1_id = s.swiped_id)
+       )
+       WHERE s.swiper_id = $1 
+         AND s.swipe_type = 'like'
+         AND u.is_active = true
+       ORDER BY s.created_at DESC`,
+      [userId]
+    );
+
+    // Get photos for each liked user
+    const likesWithPhotos = await Promise.all(
+      likes.rows.map(async (like) => {
+        const photosResult = await pool.query(
+          'SELECT photo_url FROM profile_photos WHERE user_id = $1 ORDER BY is_primary DESC',
+          [like.liked_user_id]
+        );
+        return {
+          ...like,
+          photos: photosResult.rows.map(p => p.photo_url),
+        };
+      })
+    );
+
+    res.json(likesWithPhotos);
+  } catch (error) {
+    console.error('Get likes error:', error);
+    res.status(500).json({ error: 'Failed to fetch likes' });
+  }
+};
+
 export const getNewMatchCount = async (req, res) => {
   try {
     const userId = req.user.id;
