@@ -7,6 +7,7 @@ import {
   getMatchStats, 
   getMessageStats 
 } from '../controllers/adminController.js';
+import pool from '../database/db.js';
 
 const router = express.Router();
 

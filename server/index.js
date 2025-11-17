@@ -16,7 +16,7 @@ import profileRoutes from './routes/profile.js';
 import matchRoutes from './routes/matches.js';
 import chatRoutes from './routes/chat.js';
 import callRoutes from './routes/call.js';
-import videoRoutes from './routes/video.js';
+import videoRoutes from './routes/videoRoutes.js';
 import adminRoutes from './routes/admin.js';
 import { setActiveUsers } from './controllers/videoController.js';
 
