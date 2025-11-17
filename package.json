@@ -8,7 +8,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "migrate": "node server/database/migrate.js up",
+    "migrate:rollback": "node server/database/migrate.js rollback",
+    "migrate:status": "node server/database/migrate.js status",
+    "migrate:create": "node server/database/create-migration.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
