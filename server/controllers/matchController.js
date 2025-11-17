@@ -187,46 +187,56 @@ export const getMatches = async (req, res) => {
 export const getLikes = async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log('Fetching likes for user:', userId);
 
-    // Get users that the current user has liked (but not necessarily matched with)
+    // Simplified query - get users that the current user has liked
     const likes = await pool.query(
-      `SELECT DISTINCT 
+      `SELECT 
          s.swiped_id as liked_user_id,
          s.created_at as liked_at,
          u.full_name, u.gender, u.profile_photo, u.bio, u.location,
-         EXTRACT(YEAR FROM AGE(u.date_of_birth)) as age,
-         CASE WHEN m.id IS NOT NULL THEN true ELSE false END as is_mutual_match
+         EXTRACT(YEAR FROM AGE(u.date_of_birth)) as age
        FROM swipes s
        JOIN users u ON s.swiped_id = u.id
-       LEFT JOIN matches m ON (
-         (m.user1_id = $1 AND m.user2_id = s.swiped_id) OR
-         (m.user2_id = $1 AND m.user1_id = s.swiped_id)
-       )
        WHERE s.swiper_id = $1 
          AND s.swipe_type = 'like'
          AND u.is_active = true
-       ORDER BY s.created_at DESC`,
+       ORDER BY s.created_at DESC
+       LIMIT 50`,
       [userId]
     );
 
-    // Get photos for each liked user
-    const likesWithPhotos = await Promise.all(
+    console.log('Found likes:', likes.rows.length);
+
+    // Check for mutual matches separately to avoid complex joins
+    const likesWithMatchStatus = await Promise.all(
       likes.rows.map(async (like) => {
+        // Check if it's a mutual match
+        const mutualMatch = await pool.query(
+          `SELECT id FROM matches 
+           WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)`,
+          [userId, like.liked_user_id]
+        );
+
+        // Get photos
         const photosResult = await pool.query(
-          'SELECT photo_url FROM profile_photos WHERE user_id = $1 ORDER BY is_primary DESC',
+          'SELECT photo_url FROM profile_photos WHERE user_id = $1 ORDER BY is_primary DESC LIMIT 5',
           [like.liked_user_id]
         );
+
         return {
           ...like,
+          is_mutual_match: mutualMatch.rows.length > 0,
           photos: photosResult.rows.map(p => p.photo_url),
         };
       })
     );
 
-    res.json(likesWithPhotos);
+    console.log('Returning likes with photos:', likesWithMatchStatus.length);
+    res.json(likesWithMatchStatus);
   } catch (error) {
     console.error('Get likes error:', error);
-    res.status(500).json({ error: 'Failed to fetch likes' });
+    res.status(500).json({ error: 'Failed to fetch likes', details: error.message });
   }
 };
 
