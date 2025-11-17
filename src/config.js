@@ -1,11 +1,21 @@
 // API Configuration
-export const API_URL = import.meta.env.PROD 
-  ? import.meta.env.VITE_API_URL || 'https://api.yourdomain.com'
-  : 'http://localhost:3001';
+// Get the current window location for production or use localhost for development
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    // In browser environment
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:3001';
+    } else {
+      // Use current domain with port 3001 for production
+      return `${window.location.protocol}//${window.location.hostname}:3001`;
+    }
+  }
+  // Fallback for server-side rendering
+  return import.meta.env.VITE_API_URL || 'http://localhost:3001';
+};
 
-export const SOCKET_URL = import.meta.env.PROD
-  ? import.meta.env.VITE_SOCKET_URL || 'https://api.yourdomain.com'
-  : 'http://localhost:3001';
+export const API_URL = getBaseURL();
+export const SOCKET_URL = getBaseURL();
 
 export const IS_PRODUCTION = import.meta.env.PROD;
 

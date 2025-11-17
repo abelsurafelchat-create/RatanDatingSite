@@ -36,13 +36,17 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    origin: process.env.CLIENT_URL || true, // Allow all origins in production
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true,
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -95,20 +99,29 @@ const activeUsers = new Map(); // userId -> socketId
 const waitingForCall = new Map(); // userId -> { socketId, gender, registrationType }
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  console.log('🔌 New socket connection established:', socket.id);
+  console.log('🌐 Client origin:', socket.handshake.headers.origin);
+  console.log('🔗 Client address:', socket.handshake.address);
 
   // User authentication
   socket.on('authenticate', (userId) => {
     console.log(`🔐 Authenticating user ${userId} with socket ${socket.id}`);
-    activeUsers.set(userId, socket.id);
-    socket.userId = userId;
+    
+    // Convert userId to number if it's a string
+    const userIdNum = parseInt(userId);
+    
+    activeUsers.set(userIdNum, socket.id);
+    socket.userId = userIdNum;
     
     // Update active users list for video calls
     const activeUserIds = Array.from(activeUsers.keys());
     setActiveUsers(activeUserIds);
     
-    console.log(`✅ User ${userId} authenticated successfully`);
+    console.log(`✅ User ${userIdNum} authenticated successfully`);
     console.log(`📊 Total active users: ${activeUserIds.length}`, activeUserIds);
+    
+    // Emit confirmation back to client
+    socket.emit('authenticated', { userId: userIdNum, success: true });
   });
 
   // Chat messaging
