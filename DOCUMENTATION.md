@@ -1,4 +1,4 @@
-# IndiDate - Indian Dating & Marriage App 💕
+# IndiDate - Complete Documentation 💕
 
 > A modern, full-stack dating and marriage platform specifically designed for Indian users with cultural integration, real-time features, and intelligent matching.
 
@@ -6,23 +6,6 @@
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 [![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)]()
 [![React](https://img.shields.io/badge/react-18.2.0-blue)]()
-
-## 🌟 Highlights
-
-- **🎯 Dual Mode**: Separate Dating and Marriage registration systems
-- **💑 Smart Matching**: AI-powered recommendations based on preferences
-- **📹 Video Calls**: Omegle-style random video calling with WebRTC
-- **💬 Real-time Chat**: LinkedIn-inspired professional chat interface
-- **🏛️ Cultural Integration**: Indian caste system support (optional)
-- **👆 Swipe Feature**: Tinder-like swipe interface for matching
-- **🔒 Secure**: JWT authentication, password hashing, SQL injection prevention
-- **📱 Responsive**: Mobile-first design, works on all devices
-
-## 📸 Screenshots
-
-```
-[Login Page] → [Registration] → [Swipe Interface] → [Matches] → [Chat] → [Video Call]
-```
 
 ## 🚀 Quick Start (3 Steps)
 
@@ -55,7 +38,7 @@ npm run dev
 
 **🎉 Done!** Visit http://localhost:5173
 
-## 📋 Features
+## 🌟 Features
 
 ### ✅ Implemented Features
 
@@ -207,26 +190,294 @@ NODE_ENV=development
 CLIENT_URL=http://localhost:5173
 ```
 
-## 📚 Documentation
+## 🔧 Setup Guide
 
-Comprehensive documentation available:
+### Prerequisites
 
-- **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup instructions
-- **[FEATURES.md](FEATURES.md)** - Complete feature documentation
-- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment guide
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Project overview
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick reference guide
+Before starting, ensure you have:
+- **Node.js** 18+ installed
+- **PostgreSQL** 14+ installed and running
+- **Git** (optional, for version control)
+
+### Step-by-Step Setup
+
+#### 1. Install Dependencies
+
+Open terminal in the project root directory and run:
+
+```bash
+npm install
+```
+
+#### 2. Setup PostgreSQL Database
+
+Create database:
+```sql
+CREATE DATABASE indidate;
+```
+
+Create a PostgreSQL user (optional but recommended):
+```sql
+CREATE USER indidate_user WITH PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE indidate TO indidate_user;
+```
+
+#### 3. Configure Environment Variables
+
+Create a `.env` file in the root directory:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your settings:
+
+```env
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/indidate
+
+# JWT Secret (change this to a random string)
+JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+
+# Server Port
+PORT=3001
+
+# Environment
+NODE_ENV=development
+
+# Client URL (for CORS)
+CLIENT_URL=http://localhost:5173
+```
+
+**Important:** Replace `username` and `password` with your PostgreSQL credentials.
+
+#### 4. Initialize Database
+
+Run the database initialization script:
+
+```bash
+node server/database/init.js
+```
+
+You should see:
+```
+✅ Database initialized successfully!
+Tables created:
+  - users
+  - profile_photos
+  - swipes
+  - matches
+  - messages
+  - video_calls
+  - user_preferences
+  - blocked_users
+```
+
+#### 5. Start the Application
+
+You need to run both the backend and frontend servers.
+
+**Terminal 1 - Start Backend Server:**
+
+```bash
+npm run server
+```
+
+You should see:
+```
+🚀 Server running on port 3001
+📡 Socket.io server ready
+```
+
+**Terminal 2 - Start Frontend Development Server:**
+
+```bash
+npm run dev
+```
+
+You should see:
+```
+VITE v5.x.x  ready in xxx ms
+
+➜  Local:   http://localhost:5173/
+➜  Network: use --host to expose
+```
+
+#### 6. Access the Application
+
+Open your browser and navigate to:
+```
+http://localhost:5173
+```
 
 ## 🧪 Testing
 
 ### Create Test Users
 
-1. Register first user (e.g., male, dating)
-2. Register second user (e.g., female, dating)
-3. Test swipe feature
-4. Create matches
-5. Test chat
-6. Test video calling
+1. **Register First User:**
+   - Click "Sign up"
+   - Choose "Dating" or "Marriage"
+   - Fill in details (use different genders for testing)
+   - Submit registration
+
+2. **Register Second User:**
+   - Logout from first account
+   - Register another user with opposite gender
+   - Same registration type (dating/marriage)
+
+3. **Test Features:**
+   - **Swipe:** Go to home page and swipe right on profiles
+   - **Match:** When both users like each other, you'll see a match notification
+   - **Chat:** Go to Matches page and click "Chat" to message
+   - **Random Call:** Click Video icon to start random video calling
+   - **Profile:** Update your profile information
+
+## 🐛 Troubleshooting
+
+### Database Connection Error
+
+**Error:** `Connection refused` or `ECONNREFUSED`
+
+**Solution:**
+1. Ensure PostgreSQL is running:
+   ```bash
+   # Windows
+   pg_ctl status
+   
+   # Linux/Mac
+   sudo systemctl status postgresql
+   ```
+
+2. Check your DATABASE_URL in `.env`
+3. Verify PostgreSQL is listening on port 5432
+
+### Port Already in Use
+
+**Error:** `Port 3001 is already in use`
+
+**Solution:**
+1. Change the PORT in `.env` file
+2. Or kill the process using the port:
+   ```bash
+   # Windows
+   netstat -ano | findstr :3001
+   taskkill /PID <PID> /F
+   
+   # Linux/Mac
+   lsof -ti:3001 | xargs kill -9
+   ```
+
+### Camera/Microphone Not Working
+
+**Error:** Video call not starting
+
+**Solution:**
+1. Grant browser permissions for camera/microphone
+2. Use HTTPS in production (required for WebRTC)
+3. Check if another app is using the camera
+
+### Module Not Found Errors
+
+**Error:** `Cannot find module 'xyz'`
+
+**Solution:**
+```bash
+# Delete node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### PostgreSQL Password Issues
+
+If you're having PostgreSQL password issues:
+
+#### Option 1: Try Common Default Passwords
+
+Try these common defaults:
+- `postgres`
+- `admin`
+- `password`
+- `root`
+- (blank - no password)
+
+Test with:
+```bash
+psql -U postgres
+# Enter password when prompted
+```
+
+If it works, update `.env` file to:
+```
+DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/indidate
+```
+
+#### Option 2: Reset PostgreSQL Password
+
+1. **Find pg_hba.conf:**
+   ```
+   # Linux/Mac: /etc/postgresql/14/main/pg_hba.conf
+   # Windows: C:\Program Files\PostgreSQL\14\data\pg_hba.conf
+   ```
+
+2. **Edit as Administrator** - Change this line:
+   ```
+   # IPv4 local connections:
+   host    all             all             127.0.0.1/32            scram-sha-256
+   ```
+   
+   To:
+   ```
+   # IPv4 local connections:
+   host    all             all             127.0.0.1/32            trust
+   ```
+
+3. **Restart PostgreSQL**
+
+4. **Connect without password:**
+   ```bash
+   psql -U postgres
+   ```
+
+5. **Set new password:**
+   ```sql
+   ALTER USER postgres PASSWORD 'newpassword123';
+   \q
+   ```
+
+6. **Change pg_hba.conf back to `scram-sha-256`**
+
+7. **Restart PostgreSQL again**
+
+8. **Update .env:**
+   ```
+   DATABASE_URL=postgresql://postgres:newpassword123@localhost:5432/indidate
+   ```
+
+## 🚀 Deployment
+
+### Production Environment Variables
+
+Update `.env` for production:
+
+```env
+NODE_ENV=production
+DATABASE_URL=your_production_database_url
+JWT_SECRET=very_long_random_string_for_production
+CLIENT_URL=https://yourdomain.com
+```
+
+### Build Frontend
+
+```bash
+npm run build
+```
+
+### Deploy Options
+
+1. **Heroku** - Easy deployment with PostgreSQL addon
+2. **DigitalOcean** - Full control with droplets
+3. **Vercel + Railway** - Frontend on Vercel, Backend on Railway
+4. **Docker** - Containerized deployment
 
 ## 🔒 Security Features
 
@@ -238,54 +489,30 @@ Comprehensive documentation available:
 - ✅ Secure password requirements
 - ✅ Token expiration
 
-## 🚀 Deployment
+### Security Considerations
 
-### Quick Deploy Options
+1. **Change JWT_SECRET** to a strong random string
+2. **Use HTTPS** in production
+3. **Implement rate limiting** for API endpoints
+4. **Add input validation** for all user inputs
+5. **Sanitize database queries** (already using parameterized queries)
+6. **Add CORS whitelist** for production
+7. **Implement password strength requirements**
+8. **Add email verification** for new accounts
 
-1. **Heroku** - Easy deployment with PostgreSQL addon
-2. **DigitalOcean** - Full control with droplets
-3. **Vercel + Railway** - Frontend on Vercel, Backend on Railway
-4. **Docker** - Containerized deployment
+## 📊 Performance
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+- Fast page loads with Vite
+- Optimized database queries
+- Real-time updates with Socket.io
+- Responsive design for all devices
 
-## 🐛 Troubleshooting
+## 🌐 Browser Support
 
-### Common Issues
-
-**Database Connection Error**
-```bash
-# Check PostgreSQL is running
-sudo systemctl status postgresql
-```
-
-**Port Already in Use**
-```bash
-# Kill process on port 3001
-lsof -ti:3001 | xargs kill -9
-```
-
-**Module Not Found**
-```bash
-# Reinstall dependencies
-rm -rf node_modules package-lock.json
-npm install
-```
-
-See [QUICK_REFERENCE.md](QUICK_REFERENCE.md) for more solutions.
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 📄 License
-
-MIT License - Free to use and modify
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
 
 ## 👥 Target Audience
 
@@ -309,24 +536,23 @@ MIT License - Free to use and modify
 - Advertisement revenue
 - Premium features
 
-## 📊 Performance
+## 🤝 Contributing
 
-- Fast page loads with Vite
-- Optimized database queries
-- Real-time updates with Socket.io
-- Responsive design for all devices
+Contributions welcome! Please:
 
-## 🌐 Browser Support
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
+## 📄 License
+
+MIT License - Free to use and modify
 
 ## 📞 Support
 
 For issues or questions:
-1. Check documentation
+1. Check this documentation
 2. Review error logs
 3. Create an issue
 4. Contact support

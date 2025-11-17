@@ -9,6 +9,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginType, setLoginType] = useState('dating'); // Add login type state
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -45,6 +46,36 @@ const Login = () => {
           </div>
 
           <div className="p-8">
+            {/* Login Type Tabs */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-3 text-center">
+                Sign in for
+              </label>
+              <div className="grid grid-cols-2 gap-3 p-1 bg-gray-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setLoginType('dating')}
+                  className={`py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                    loginType === 'dating'
+                      ? 'bg-white text-pink-600 shadow-md border-2 border-pink-200'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  💕 Dating
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginType('marriage')}
+                  className={`py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 ${
+                    loginType === 'marriage'
+                      ? 'bg-white text-pink-600 shadow-md border-2 border-pink-200'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  💍 Marriage
+                </button>
+              </div>
+            </div>
 
           {error && (
             <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg flex items-start gap-3">
@@ -108,8 +139,12 @@ const Login = () => {
                 </>
               ) : (
                 <>
-                  <span>Sign In</span>
-                  <Heart className="w-5 h-5" />
+                  <span>Sign In for {loginType === 'dating' ? 'Dating' : 'Marriage'}</span>
+                  {loginType === 'dating' ? (
+                    <Heart className="w-5 h-5" />
+                  ) : (
+                    <span className="text-lg">💍</span>
+                  )}
                 </>
               )}
             </button>
@@ -119,8 +154,11 @@ const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-600">
               Don't have an account?{' '}
-              <Link to="/register" className="text-pink-600 font-semibold hover:text-purple-600 transition">
-                Sign up
+              <Link 
+                to={`/register?type=${loginType}`} 
+                className="text-pink-600 font-semibold hover:text-purple-600 transition"
+              >
+                Sign up for {loginType === 'dating' ? 'Dating' : 'Marriage'}
               </Link>
             </p>
           </div>

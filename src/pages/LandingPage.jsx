@@ -9,6 +9,7 @@ const LandingPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [registrationType, setRegistrationType] = useState('dating'); // 'dating' or 'marriage'
+  const [loginType, setLoginType] = useState('dating'); // Add login type for sign-in
   const [showCasteDropdown, setShowCasteDropdown] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   const photoInputRef = useRef(null);
@@ -376,10 +377,16 @@ const LandingPage = () => {
               </div>
               
               <h2 className="text-2xl font-bold text-white">
-                {isLogin ? 'Welcome Back!' : 'Find Your Perfect Match'}
+                {isLogin 
+                  ? `Welcome Back to ${loginType === 'dating' ? 'Dating' : 'Marriage'}!` 
+                  : `Find Your Perfect ${registrationType === 'dating' ? 'Match' : 'Life Partner'}`
+                }
               </h2>
               <p className="text-white/90 mt-2">
-                {isLogin ? 'Sign in to continue your journey' : 'Join thousands of happy couples'}
+                {isLogin 
+                  ? `Sign in to continue your ${loginType === 'dating' ? 'dating' : 'marriage'} journey` 
+                  : `Join thousands of happy ${registrationType === 'dating' ? 'couples' : 'marriages'}`
+                }
               </p>
             </div>
 
@@ -416,6 +423,54 @@ const LandingPage = () => {
                 </button>
               </div>
             </div>
+
+              {/* Login Type Tabs (Only for Sign In) */}
+              {isLogin && (
+                <div className="px-4 sm:px-6 pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-3">Sign in for:</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setLoginType('dating')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      loginType === 'dating'
+                        ? 'border-pink-500 bg-pink-50'
+                        : 'border-gray-200 hover:border-pink-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">💕</div>
+                      <div className={`font-semibold ${
+                        loginType === 'dating' ? 'text-pink-600' : 'text-gray-700'
+                      }`}>
+                        Dating
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Casual relationships</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setLoginType('marriage')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      loginType === 'marriage'
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">💍</div>
+                      <div className={`font-semibold ${
+                        loginType === 'marriage' ? 'text-purple-600' : 'text-gray-700'
+                      }`}>
+                        Marriage
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Serious commitment</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
 
               {/* Registration Type Tabs (Only for Sign Up) */}
               {!isLogin && (
@@ -708,13 +763,21 @@ const LandingPage = () => {
                     <>
                       {isLogin ? (
                         <>
-                          <span>Sign In</span>
-                          <Heart className="w-5 h-5" />
+                          <span>Sign In for {loginType === 'dating' ? 'Dating' : 'Marriage'}</span>
+                          {loginType === 'dating' ? (
+                            <Heart className="w-5 h-5" />
+                          ) : (
+                            <span className="text-lg">💍</span>
+                          )}
                         </>
                       ) : (
                         <>
-                          <span>Create Account</span>
-                          <Sparkles className="w-5 h-5" />
+                          <span>Create Account for {registrationType === 'dating' ? 'Dating' : 'Marriage'}</span>
+                          {registrationType === 'dating' ? (
+                            <Heart className="w-5 h-5" />
+                          ) : (
+                            <span className="text-lg">💍</span>
+                          )}
                         </>
                       )}
                     </>

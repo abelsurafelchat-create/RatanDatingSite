@@ -18,7 +18,8 @@ async function initializeDatabase() {
     
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
-    const schemaPath = join(__dirname, 'schema.sql');
+    // Use the consolidated database.sql file from project root
+    const schemaPath = join(__dirname, '../../database.sql');
     
     const schema = readFileSync(schemaPath, 'utf8');
     

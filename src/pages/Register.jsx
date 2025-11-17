@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Heart, Mail, Lock, User, Calendar, MapPin, Phone, AlertCircle, Camera, X, Eye, EyeOff, Shield, Sparkles, ChevronDown } from 'lucide-react';
 
@@ -54,6 +54,15 @@ const Register = () => {
   const photoInputRef = useRef(null);
   const { register, login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Handle URL parameter for registration type
+  useEffect(() => {
+    const typeParam = searchParams.get('type');
+    if (typeParam === 'dating' || typeParam === 'marriage') {
+      setFormData(prev => ({ ...prev, registrationType: typeParam }));
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({
