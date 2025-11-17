@@ -6,8 +6,8 @@ const getBaseURL = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:3001';
     } else {
-      // Use current domain with port 3001 for production
-      return `${window.location.protocol}//${window.location.hostname}:3001`;
+      // Use current domain and port (same as the webpage)
+      return `${window.location.protocol}//${window.location.host}`;
     }
   }
   // Fallback for server-side rendering

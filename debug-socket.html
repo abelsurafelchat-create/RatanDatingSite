@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket Connection Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket Connection Test</h1>
+    <div id="status">Testing...</div>
+    <div id="logs"></div>
+
+    <script>
+        const logs = document.getElementById('logs');
+        const status = document.getElementById('status');
+        
+        function log(message) {
+            console.log(message);
+            logs.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        // Get current domain and try to connect
+        const socketUrl = `${window.location.protocol}//${window.location.hostname}:3001`;
+        log('Attempting to connect to: ' + socketUrl);
+        
+        const socket = io(socketUrl, {
+            transports: ['websocket', 'polling'],
+            timeout: 10000
+        });
+        
+        socket.on('connect', () => {
+            log('✅ Socket connected successfully!');
+            status.textContent = 'Connected';
+            status.style.color = 'green';
+            
+            // Test authentication
+            socket.emit('authenticate', 999); // Test user ID
+        });
+        
+        socket.on('connect_error', (error) => {
+            log('❌ Connection error: ' + error.message);
+            status.textContent = 'Connection Failed';
+            status.style.color = 'red';
+        });
+        
+        socket.on('disconnect', (reason) => {
+            log('🔌 Disconnected: ' + reason);
+            status.textContent = 'Disconnected';
+            status.style.color = 'orange';
+        });
+        
+        socket.on('authenticated', (data) => {
+            log('🎉 Authentication confirmed: ' + JSON.stringify(data));
+        });
+        
+        // Timeout test
+        setTimeout(() => {
+            if (!socket.connected) {
+                log('⏰ Connection timeout - socket server may not be accessible');
+                status.textContent = 'Timeout';
+                status.style.color = 'red';
+            }
+        }, 15000);
+    </script>
+</body>
+</html>

@@ -19,19 +19,30 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const { user, token } = useAuth();
 
+  console.log('🔧 SocketProvider initialized');
+  console.log('👤 Current user:', user ? `ID: ${user.id}, Name: ${user.full_name}` : 'No user');
+  console.log('🔑 Token available:', !!token);
+
   useEffect(() => {
+    console.log('🔄 SocketProvider useEffect triggered');
+    console.log('👤 User state:', user);
+    console.log('🔑 Token state:', token);
+    
     if (user && token) {
       console.log('🔌 Attempting socket connection...');
       console.log('🌐 Socket URL:', SOCKET_URL);
       console.log('👤 User ID:', user.id);
       console.log('🔑 Token present:', !!token);
       
-      const newSocket = io(SOCKET_URL, {
-        transports: ['websocket', 'polling'],
-        timeout: 20000,
-        forceNew: true,
-        autoConnect: true,
-      });
+      try {
+        console.log('📦 Creating socket.io instance...');
+        const newSocket = io(SOCKET_URL, {
+          transports: ['websocket', 'polling'],
+          timeout: 20000,
+          forceNew: true,
+          autoConnect: true,
+        });
+        console.log('✅ Socket.io instance created successfully');
 
       newSocket.on('connect', () => {
         console.log('🔌 Socket connected successfully');
@@ -84,6 +95,11 @@ export const SocketProvider = ({ children }) => {
         clearInterval(lastSeenInterval);
         newSocket.close();
       };
+      } catch (error) {
+        console.error('❌ Failed to create socket connection:', error);
+      }
+    } else {
+      console.log('⚠️ User or token not available, skipping socket connection');
     }
   }, [user, token]);
 
