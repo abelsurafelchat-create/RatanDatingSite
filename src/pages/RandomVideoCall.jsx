@@ -17,6 +17,8 @@ const RandomVideoCall = () => {
   const [incomingCall, setIncomingCall] = useState(null); // { from, fromName, fromPhoto, offer }
   const [showRejectedModal, setShowRejectedModal] = useState(false);
   const [showDisconnectedModal, setShowDisconnectedModal] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [permissionError, setPermissionError] = useState('');
   const [lastPartnerId, setLastPartnerId] = useState(null); // Track last partner to avoid immediate rematch
   
   const localVideoRef = useRef(null);
@@ -228,21 +230,149 @@ const RandomVideoCall = () => {
     };
   }, [socket]);
 
-  const startLocalStream = async () => {
+  const checkPermissions = async () => {
     try {
+      // Check if permissions API is supported
+      if (navigator.permissions) {
+        const cameraPermission = await navigator.permissions.query({ name: 'camera' });
+        const microphonePermission = await navigator.permissions.query({ name: 'microphone' });
+        
+        return {
+          camera: cameraPermission.state,
+          microphone: microphonePermission.state
+        };
+      }
+      return null;
+    } catch (error) {
+      console.log('Permissions API not supported or error:', error);
+      return null;
+    }
+  };
+
+  const requestPermissions = async () => {
+    try {
+      console.log('🔐 Requesting camera and microphone permissions...');
+      setPermissionError('Please allow camera and microphone access when prompted by your browser.');
+      setShowPermissionModal(true);
+      
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: true,
         audio: true
       });
+      
+      // Stop the stream immediately - we just wanted to get permission
+      mediaStream.getTracks().forEach(track => track.stop());
+      
+      setShowPermissionModal(false);
+      console.log('✅ Permissions granted successfully');
+      return true;
+    } catch (error) {
+      console.error('Permission request failed:', error);
+      
+      let errorMessage = 'Failed to get camera/microphone permissions. ';
+      switch (error.name) {
+        case 'NotAllowedError':
+        case 'PermissionDeniedError':
+          errorMessage += 'Please click "Allow" when your browser asks for camera and microphone access.';
+          break;
+        case 'NotFoundError':
+          errorMessage += 'No camera or microphone found on your device.';
+          break;
+        default:
+          errorMessage += 'Please check your camera and microphone are working.';
+      }
+      
+      setPermissionError(errorMessage);
+      setShowPermissionModal(true);
+      return false;
+    }
+  };
+
+  const startLocalStream = async () => {
+    try {
+      // First check current permissions
+      const permissions = await checkPermissions();
+      console.log('📋 Current permissions:', permissions);
+
+      // Show user-friendly message before requesting access
+      if (permissions && (permissions.camera === 'denied' || permissions.microphone === 'denied')) {
+        setPermissionError('Camera or microphone access was previously denied. Please click the camera icon in your browser\'s address bar to allow access, then try again.');
+        setShowPermissionModal(true);
+        return null;
+      }
+
+      console.log('📹 Requesting camera and microphone access...');
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      console.log('✅ Media access granted successfully');
       setStream(mediaStream);
       streamRef.current = mediaStream; // Keep ref for closures
+      
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = mediaStream;
       }
+      
       return mediaStream;
     } catch (error) {
       console.error('Error accessing media devices:', error);
-      alert('Failed to access camera/microphone. Please check permissions.');
+      
+      // Handle different types of errors with specific messages
+      let errorMessage = 'Failed to access camera/microphone. ';
+      
+      switch (error.name) {
+        case 'NotAllowedError':
+        case 'PermissionDeniedError':
+          errorMessage += 'Please allow camera and microphone access when prompted, or click the camera icon in your browser\'s address bar to grant permissions.';
+          break;
+        case 'NotFoundError':
+        case 'DevicesNotFoundError':
+          errorMessage += 'No camera or microphone found. Please connect a camera and microphone and try again.';
+          break;
+        case 'NotReadableError':
+        case 'TrackStartError':
+          errorMessage += 'Camera or microphone is already in use by another application. Please close other apps using your camera/microphone and try again.';
+          break;
+        case 'OverconstrainedError':
+        case 'ConstraintNotSatisfiedError':
+          errorMessage += 'Camera settings not supported. Trying with basic settings...';
+          // Try again with basic constraints
+          try {
+            const basicStream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: true
+            });
+            console.log('✅ Media access granted with basic settings');
+            setStream(basicStream);
+            streamRef.current = basicStream;
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = basicStream;
+            }
+            return basicStream;
+          } catch (basicError) {
+            console.error('Basic media access also failed:', basicError);
+            errorMessage = 'Failed to access camera/microphone even with basic settings. Please check your device permissions.';
+          }
+          break;
+        case 'SecurityError':
+          errorMessage += 'Access denied due to security restrictions. Please ensure you\'re using HTTPS and try again.';
+          break;
+        default:
+          errorMessage += 'Unknown error occurred. Please check your camera and microphone are working and try again.';
+      }
+      
+      setPermissionError(errorMessage);
+      setShowPermissionModal(true);
       return null;
     }
   };
@@ -250,6 +380,14 @@ const RandomVideoCall = () => {
   const handleStartCall = async () => {
     if (!socket) {
       alert('Connection not established. Please refresh the page.');
+      return;
+    }
+
+    // Check permissions first
+    const permissions = await checkPermissions();
+    if (permissions && (permissions.camera === 'denied' || permissions.microphone === 'denied')) {
+      setPermissionError('Camera or microphone access is required for video calls. Please grant permissions to continue.');
+      setShowPermissionModal(true);
       return;
     }
 
@@ -728,6 +866,40 @@ const RandomVideoCall = () => {
                 <h2 className="text-3xl font-bold text-white mb-2">Partner Left</h2>
                 <p className="text-white/90 mb-6">Your partner has disconnected</p>
                 <p className="text-white/80 text-sm">Searching for a new partner...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Permission Request Modal */}
+        {showPermissionModal && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50 animate-fade-in">
+            <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl p-8 max-w-md mx-4 shadow-2xl animate-slide-up">
+              <div className="text-center">
+                <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse-slow">
+                  <Video className="w-12 h-12 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-4">Camera & Microphone Access</h2>
+                <p className="text-white/90 mb-6 text-lg leading-relaxed">{permissionError}</p>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={requestPermissions}
+                    className="px-8 py-3 bg-white/20 hover:bg-white/30 text-white rounded-full font-semibold transition transform hover:scale-105 backdrop-blur-sm"
+                  >
+                    🎥 Request Permissions
+                  </button>
+                  <button
+                    onClick={() => setShowPermissionModal(false)}
+                    className="px-8 py-3 bg-gray-600/50 hover:bg-gray-600/70 text-white rounded-full font-semibold transition transform hover:scale-105 backdrop-blur-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="mt-4 p-4 bg-white/10 rounded-xl backdrop-blur-sm">
+                  <p className="text-white/80 text-sm">
+                    💡 <strong>Tip:</strong> Look for the camera icon in your browser's address bar and click "Allow" to grant permissions.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
