@@ -7,7 +7,7 @@ export const getProfile = async (req, res) => {
     const result = await pool.query(
       `SELECT u.id, u.email, u.full_name, u.gender, u.date_of_birth, 
               u.registration_type, u.caste, u.phone, u.location, u.bio, 
-              u.profile_photo, u.created_at,
+              u.profile_photo, u.created_at, u.role,
               up.preferred_gender, up.min_age, up.max_age, up.preferred_castes, up.max_distance
        FROM users u
        LEFT JOIN user_preferences up ON u.id = up.user_id
@@ -112,10 +112,10 @@ export const updateProfile = async (req, res) => {
     // Handle photos - delete old ones and insert new ones
     if (photos && Array.isArray(photos) && photos.length > 0) {
       console.log('Updating photos...');
-      
+
       // Delete existing photos
       await pool.query('DELETE FROM profile_photos WHERE user_id = $1', [userId]);
-      
+
       // Insert new photos
       for (let i = 0; i < photos.length; i++) {
         await pool.query(
@@ -123,7 +123,7 @@ export const updateProfile = async (req, res) => {
           [userId, photos[i], photos[i] === profile_photo]
         );
       }
-      
+
       console.log('Photos updated');
     }
 
@@ -132,7 +132,7 @@ export const updateProfile = async (req, res) => {
     console.error('Update profile error:', error);
     console.error('Error message:', error.message);
     console.error('Error stack:', error.stack);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update profile',
       message: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
