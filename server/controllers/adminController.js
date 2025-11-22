@@ -3,6 +3,7 @@ import pool from '../database/db.js';
 // Get admin dashboard statistics
 export const getAdminStats = async (req, res) => {
   try {
+    console.log('📊 Admin stats request from user:', req.user?.id, req.user?.email, 'role:', req.user?.role);
     // Get total users
     const totalUsersResult = await pool.query('SELECT COUNT(*) as count FROM users');
     const totalUsers = parseInt(totalUsersResult.rows[0].count);
@@ -73,6 +74,7 @@ export const getAdminStats = async (req, res) => {
 // Get all users with additional info
 export const getAdminUsers = async (req, res) => {
   try {
+    console.log('👥 Admin users request from user:', req.user?.id, req.user?.email, 'role:', req.user?.role);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;

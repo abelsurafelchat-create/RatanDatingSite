@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IndiDate - Find Your Perfect Match</title>
     <script>
+      // Build timestamp for verification
+      window.BUILD_TIMESTAMP = new Date().toISOString();
+      console.log('🏗️ Build Timestamp:', window.BUILD_TIMESTAMP);
+      
       // CRITICAL: Must run BEFORE any module loads
       // Polyfills for axios, simple-peer and Node.js globals
       (function() {

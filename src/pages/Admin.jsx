@@ -33,27 +33,53 @@ const Admin = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  console.log('🔐 Admin Component - Initial Render');
+  console.log('👤 User:', user ? { id: user.id, name: user.full_name, email: user.email, role: user.role } : 'null');
+  console.log('📍 Current path:', window.location.pathname);
+
   useEffect(() => {
+    console.log('🔄 Admin useEffect triggered');
+    console.log('👤 User in useEffect:', user ? { id: user.id, name: user.full_name, role: user.role } : 'null');
+    
     // Fetch admin data when component mounts
     // PrivateRoute ensures user is authenticated
     if (user) {
+      console.log('✅ User exists, fetching admin data...');
       fetchAdminData();
+    } else {
+      console.log('⚠️ No user found, waiting for user to load...');
+      setLoading(false);
     }
   }, [user]);
 
   const fetchAdminData = async () => {
+    console.log('📡 fetchAdminData called');
     try {
       setLoading(true);
+      console.log('🔄 Fetching admin users and stats...');
+      
       const [usersData, statsData] = await Promise.all([
         api.get('/admin/users'),
         api.get('/admin/stats')
       ]);
+      
+      console.log('✅ Admin data fetched successfully');
+      console.log('👥 Users count:', usersData?.length || 0);
+      console.log('📊 Stats:', statsData);
+      
       setUsers(usersData);
       setStats(statsData);
     } catch (error) {
-      console.error('Failed to fetch admin data:', error);
+      console.error('❌ Failed to fetch admin data:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
     } finally {
       setLoading(false);
+      console.log('🏁 fetchAdminData completed, loading set to false');
     }
   };
 
