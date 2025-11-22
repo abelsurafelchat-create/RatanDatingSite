@@ -18,7 +18,7 @@ const Header = () => {
     { path: '/chat', icon: MessageCircle, label: 'Messages', badge: unreadMessages },
     { path: '/video-call', icon: Video, label: 'Video Call', badge: null },
     { path: '/profile', icon: UserIcon, label: 'Profile', badge: null },
-    ...(user?.role === 'admin' ? [{ path: '/admin', icon: Shield, label: 'Admin', badge: null }] : []),
+    ...(user ? [{ path: '/admin', icon: Shield, label: 'Admin', badge: null }] : []),
   ];
 
   return (

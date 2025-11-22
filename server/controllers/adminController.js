@@ -3,11 +3,6 @@ import pool from '../database/db.js';
 // Get admin dashboard statistics
 export const getAdminStats = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
-
     // Get total users
     const totalUsersResult = await pool.query('SELECT COUNT(*) as count FROM users');
     const totalUsers = parseInt(totalUsersResult.rows[0].count);
@@ -78,11 +73,6 @@ export const getAdminStats = async (req, res) => {
 // Get all users with additional info
 export const getAdminUsers = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
-
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
@@ -117,11 +107,6 @@ export const getAdminUsers = async (req, res) => {
 // User management actions
 export const manageUser = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
-
     const { userId } = req.params;
     const { action } = req.params;
 
@@ -154,11 +139,6 @@ export const manageUser = async (req, res) => {
 // Get match statistics
 export const getMatchStats = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
-
     // Matches per day for the last 30 days
     const matchesPerDay = await pool.query(
       `SELECT 
@@ -199,11 +179,6 @@ export const getMatchStats = async (req, res) => {
 // Get message statistics
 export const getMessageStats = async (req, res) => {
   try {
-    // Check if user is admin
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
-    }
-
     // Messages per day for the last 30 days
     const messagesPerDay = await pool.query(
       `SELECT 

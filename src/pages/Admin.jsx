@@ -34,8 +34,8 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is admin
-    if (!user || user.role !== 'admin') {
+    // Check if user is logged in
+    if (!user) {
       navigate('/');
       return;
     }
