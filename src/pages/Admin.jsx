@@ -34,14 +34,12 @@ const Admin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is logged in
-    if (!user) {
-      navigate('/');
-      return;
+    // Fetch admin data when component mounts
+    // PrivateRoute ensures user is authenticated
+    if (user) {
+      fetchAdminData();
     }
-    
-    fetchAdminData();
-  }, [user, navigate]);
+  }, [user]);
 
   const fetchAdminData = async () => {
     try {
